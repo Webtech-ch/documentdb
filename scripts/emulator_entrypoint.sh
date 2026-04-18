@@ -110,6 +110,11 @@ Optional arguments:
                         Disable the use of extended_rum for indexes.
                         By default, extended rum is enabled.
                         Overrides DISABLE_EXTENDED_RUM environment variable.
+  --tls-enabled         Enable TLS for the gateway. When set to true, TLS is enabled
+                        using auto-generated certificates (or custom certs if --cert-path
+                        and --key-file are provided).
+                        Defaults to false.
+                        Overrides TLS_ENABLED environment variable.
                         
 EOF
 }
@@ -210,6 +215,10 @@ do
         export DISABLE_EXTENDED_RUM=true
         shift;;
 
+    --tls-enabled)
+        export TLS_ENABLED=true
+        shift;;
+
     -*)
         echo "Unknown option $1"
         exit 1;; 
@@ -228,6 +237,7 @@ export START_POSTGRESQL=${START_POSTGRESQL:-true}
 export INIT_DATA_PATH=${INIT_DATA_PATH:-/init_doc_db.d}
 export SKIP_INIT_DATA=${SKIP_INIT_DATA:-false}
 export DISABLE_EXTENDED_RUM=${DISABLE_EXTENDED_RUM:-false}
+export TLS_ENABLED=${TLS_ENABLED:-false}
 
 # Setup centralized log directory structure
 echo "Setting up centralized log directory at /var/log/documentdb..."
@@ -429,8 +439,10 @@ if [ -n "${CERT_PATH:-}" ] && [ -n "${KEY_FILE:-}" ]; then
        $configFile > $configFile.tmp && \
     mv $configFile.tmp $configFile
     export TLS_ENABLED=true
-else
-    export TLS_ENABLED=false
+elif [ "$TLS_ENABLED" = "true" ]; then
+    echo "Enabling TLS in the configuration file..."
+    jq '.TlsEnabled = true' $configFile > $configFile.tmp && \
+    mv $configFile.tmp $configFile
 fi
 
 echo "Starting gateway in the background..."

@@ -30,3 +30,14 @@ A new `TlsEnabled` configuration parameter controls whether TLS is active. It de
 - **`init_documentdb_data.sh`**: Added a `--tls` flag. `mongosh` connections no longer pass `--tls --tlsAllowInvalidCertificates` unconditionally; TLS options are only added when `--tls` is passed. The entrypoint script passes `--tls` to `init_documentdb_data.sh` only when TLS is enabled.
 - Internally, `TlsProvider` is now `Option<TlsProvider>` throughout the gateway core, so no TLS certificates are required when TLS is disabled.
 
+
+```
+# Via env var
+docker run -e TLS_ENABLED=true ...
+
+# Via CLI flag
+docker run ... documentdb --tls-enabled --username user --password pass
+
+# Via certs (unchanged, still auto-enables TLS)
+docker run ... documentdb --cert-path /cert.pem --key-file /key.pem ...
+```
