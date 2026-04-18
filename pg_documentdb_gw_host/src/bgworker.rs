@@ -102,13 +102,20 @@ async fn run_docdb_gateway(setup_configuration_file: &str) {
 
     tracing::info!("Starting server with configuration: {setup_configuration:?}");
 
-    let tls_provider = TlsProvider::new(
-        SetupConfiguration::certificate_options(&setup_configuration),
-        None,
-        None,
-    )
-    .await
-    .expect("Failed to create TLS provider.");
+    let tls_provider = if SetupConfiguration::tls_enabled(&setup_configuration) {
+        Some(
+            TlsProvider::new(
+                SetupConfiguration::certificate_options(&setup_configuration),
+                None,
+                None,
+            )
+            .await
+            .expect("Failed to create TLS provider."),
+        )
+    } else {
+        tracing::info!("TLS is disabled; skipping TLS provider initialization.");
+        None
+    };
 
     let connection_pool_manager = create_connection_pool_manager(
         create_query_catalog(),

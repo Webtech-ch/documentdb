@@ -12,6 +12,7 @@ PASSWORD=""
 INIT_DATA_PATH="/init_doc_db.d"
 VERBOSE="false"
 DOCUMENTDB_PORT="10260"
+USE_TLS="false"
 LOG_FILE="${ENTRYPOINT_LOG:-/var/log/documentdb/gateway_entrypoint.log}"
 LOG_FILE_AVAILABLE="false"
 
@@ -39,6 +40,7 @@ Options:
   -d, --data-path PATH         Path to directory containing .js initialization files
                                (default: /init_doc_db.d)
   -v, --verbose                Enable verbose output
+  --tls                        Use TLS when connecting to DocumentDB
 
 Examples:
   # Initialize with custom data files
@@ -79,6 +81,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -v|--verbose)
             VERBOSE="true"
+            shift
+            ;;
+        --tls)
+            USE_TLS="true"
             shift
             ;;
         *)
@@ -128,7 +134,11 @@ wait_for_documentdb() {
     
     while [ $attempt -le $max_attempts ]; do
         if command -v mongosh >/dev/null 2>&1; then
-            if mongosh "localhost:${DOCUMENTDB_PORT}" -u "$USERNAME" -p "$PASSWORD" --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
+            tls_opts=()
+            if [ "$USE_TLS" = "true" ]; then
+                tls_opts=(--tls --tlsAllowInvalidCertificates)
+            fi
+            if mongosh "localhost:${DOCUMENTDB_PORT}" -u "$USERNAME" -p "$PASSWORD" --authenticationMechanism SCRAM-SHA-256 "${tls_opts[@]}" --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
                 echo "DocumentDB is ready!"
                 return 0
             fi
@@ -174,7 +184,11 @@ run_init_scripts() {
             print_file_and_log "$init_file"
             print_and_log "---- End init data: $(basename \"$init_file\") ----"
 
-            if mongosh "localhost:${DOCUMENTDB_PORT}" -u "$USERNAME" -p "$PASSWORD" --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --file "$init_file"; then
+            tls_opts=()
+            if [ "$USE_TLS" = "true" ]; then
+                tls_opts=(--tls --tlsAllowInvalidCertificates)
+            fi
+            if mongosh "localhost:${DOCUMENTDB_PORT}" -u "$USERNAME" -p "$PASSWORD" --authenticationMechanism SCRAM-SHA-256 "${tls_opts[@]}" --file "$init_file"; then
                 log "Successfully executed: $(basename "$init_file")"
             else
                 echo "Error: Failed to execute: $(basename "$init_file")"

@@ -24,7 +24,7 @@ pub struct ServiceContextInner {
     pub connection_pool_manager: Arc<PoolManager>,
     pub cursor_store: CursorStore,
     pub transaction_store: TransactionStore,
-    pub tls_provider: TlsProvider,
+    pub tls_provider: Option<TlsProvider>,
     pub custom_pg_error_mapper: Option<Box<dyn CustomPostgresErrorMapper>>,
     pub request_metrics_enabled: bool,
 }
@@ -38,7 +38,7 @@ impl ServiceContext {
         setup_configuration: Box<dyn SetupConfiguration>,
         dynamic_configuration: Arc<dyn DynamicConfiguration>,
         connection_pool_manager: Arc<PoolManager>,
-        tls_provider: TlsProvider,
+        tls_provider: Option<TlsProvider>,
         custom_pg_error_mapper: Option<Box<dyn CustomPostgresErrorMapper>>,
     ) -> Self {
         let request_metrics_enabled = TelemetryConfig::new(setup_configuration.telemetry_options())
@@ -86,8 +86,8 @@ impl ServiceContext {
     }
 
     #[must_use]
-    pub fn tls_provider(&self) -> &TlsProvider {
-        &self.0.tls_provider
+    pub fn tls_provider(&self) -> Option<&TlsProvider> {
+        self.0.tls_provider.as_ref()
     }
 
     #[must_use]

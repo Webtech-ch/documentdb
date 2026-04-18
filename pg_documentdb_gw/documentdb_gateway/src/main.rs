@@ -88,15 +88,24 @@ async fn start_gateway(setup_configuration: DocumentDBSetupConfiguration) {
         SHUTDOWN_CONTROLLER.shutdown();
     });
 
-    let tls_provider = TlsProvider::new(
-        SetupConfiguration::certificate_options(&setup_configuration),
-        None,
-        None,
-    )
-    .await
-    .expect("Failed to create TLS provider.");
+    let tls_provider = if SetupConfiguration::tls_enabled(&setup_configuration) {
+        Some(
+            TlsProvider::new(
+                SetupConfiguration::certificate_options(&setup_configuration),
+                None,
+                None,
+            )
+            .await
+            .expect("Failed to create TLS provider."),
+        )
+    } else {
+        tracing::info!("TLS is disabled; skipping TLS provider initialization.");
+        None
+    };
 
-    tracing::info!("TLS provider initialized successfully.");
+    if tls_provider.is_some() {
+        tracing::info!("TLS provider initialized successfully.");
+    }
 
     let query_catalog = create_query_catalog();
 

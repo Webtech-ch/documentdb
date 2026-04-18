@@ -88,7 +88,7 @@ Optional arguments:
   --start-pg            Specify whether to start the PostgreSQL server.
                         Defaults to true.
   --pg-port             Specify the port for the PostgreSQL server.
-                        Defaults to 9712.
+                        Defaults to 5432.
                         Overrides PG_PORT environment variable.
   --owner               Specify the owner of the DocumentDB.
                         Overrides OWNER environment variable.
@@ -220,7 +220,7 @@ done
 export OWNER=${OWNER:-$(whoami)}
 export DATA_PATH=${DATA_PATH:-/data}
 export DOCUMENTDB_PORT=${DOCUMENTDB_PORT:-10260}
-export POSTGRESQL_PORT=${POSTGRESQL_PORT:-9712}
+export POSTGRESQL_PORT=${POSTGRESQL_PORT:-5432}
 export USERNAME=${USERNAME:-default_user}
 export PASSWORD=${PASSWORD:-Admin100}
 export CREATE_USER=${CREATE_USER:-true}
@@ -425,9 +425,12 @@ fi
 if [ -n "${CERT_PATH:-}" ] && [ -n "${KEY_FILE:-}" ]; then
     echo "Adding CertificateOptions to the configuration file..."
     jq --arg certPath "$CERT_PATH" --arg keyFilePath "$KEY_FILE" \
-       '.CertificateOptions = { "CertType": "PemFile", "FilePath": $certPath, "KeyFilePath": $keyFilePath }' \
+       '.CertificateOptions = { "CertType": "PemFile", "FilePath": $certPath, "KeyFilePath": $keyFilePath } | .TlsEnabled = true' \
        $configFile > $configFile.tmp && \
     mv $configFile.tmp $configFile
+    export TLS_ENABLED=true
+else
+    export TLS_ENABLED=false
 fi
 
 echo "Starting gateway in the background..."
@@ -468,7 +471,11 @@ if [ -d "$INIT_DATA_PATH" ] && [ "$(ls -A "$INIT_DATA_PATH"/*.js 2>/dev/null)" ]
     init_script="/home/documentdb/gateway/scripts/init_documentdb_data.sh"
     if [ -f "$init_script" ]; then
         echo "Using custom initialization data from: $INIT_DATA_PATH"
-        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$INIT_DATA_PATH" -v; then
+        tls_args=()
+        if [ "$TLS_ENABLED" = "true" ]; then
+            tls_args=(--tls)
+        fi
+        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$INIT_DATA_PATH" -v "${tls_args[@]}"; then
             echo "Custom data initialization completed."
             custom_data_initialized=true
         else
@@ -490,7 +497,11 @@ if [ "$SKIP_INIT_DATA" != "true" ]; then
     
     if [ -f "$init_script" ] && [ -d "$sample_data_path" ]; then
         echo "Loading sample data from: $sample_data_path"
-        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$sample_data_path" -v; then
+        tls_args=()
+        if [ "$TLS_ENABLED" = "true" ]; then
+            tls_args=(--tls)
+        fi
+        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$sample_data_path" -v "${tls_args[@]}"; then
             echo "Sample data initialization completed."
         else
             echo "Error: Sample data initialization failed"

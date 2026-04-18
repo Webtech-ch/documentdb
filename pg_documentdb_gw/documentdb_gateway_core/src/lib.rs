@@ -374,7 +374,9 @@ where
     socket2::SockRef::from(&tcp_stream).set_tcp_keepalive(&tcp_keepalive)?;
 
     // Detect TLS handshake by peeking at the first bytes
-    let is_tls = if service_context.setup_configuration().enforce_tls() {
+    let is_tls = if !service_context.setup_configuration().tls_enabled() {
+        false
+    } else if service_context.setup_configuration().enforce_tls() {
         true
     } else {
         detect_tls_handshake(&tcp_stream, connection_id).await?
@@ -394,7 +396,12 @@ where
 
     if is_tls {
         // TLS path
-        let tls_acceptor = service_context.tls_provider().tls_acceptor();
+        let Some(tls_provider) = service_context.tls_provider() else {
+            return Err(DocumentDBError::internal_error(
+                "TLS connection received but TLS is not enabled.".to_owned(),
+            ));
+        };
+        let tls_acceptor = tls_provider.tls_acceptor();
         let ssl_session = Ssl::new(tls_acceptor.context())?;
         let mut tls_stream = SslStream::new(ssl_session, tcp_stream)?;
 

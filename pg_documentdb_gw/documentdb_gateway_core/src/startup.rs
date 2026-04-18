@@ -23,7 +23,7 @@ pub fn get_service_context(
     setup_configuration: Box<dyn SetupConfiguration>,
     dynamic_configuration: Arc<dyn DynamicConfiguration>,
     connection_pool_manager: Arc<PoolManager>,
-    tls_provider: TlsProvider,
+    tls_provider: Option<TlsProvider>,
     custom_pg_error_mapper: Option<Box<dyn CustomPostgresErrorMapper>>,
 ) -> ServiceContext {
     tracing::info!("Initial dynamic configuration: {dynamic_configuration:?}");

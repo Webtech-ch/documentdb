@@ -28,6 +28,7 @@ pub struct DocumentDBSetupConfiguration {
     pub use_local_host: Option<bool>,
     pub gateway_listen_port: Option<u16>,
     pub enforce_tls: Option<bool>,
+    pub tls_enabled: Option<bool>,
 
     // Postgres configuration
     #[serde(default = "default_user")]
@@ -101,6 +102,14 @@ impl DocumentDBSetupConfiguration {
             }
         }
 
+        // Validate that enforce_tls is not enabled when tls_enabled is false
+        if config.enforce_tls.unwrap_or(false) && !config.tls_enabled.unwrap_or(false) {
+            return Err(DocumentDBError::internal_error(
+                "Invalid configuration: 'enforce_tls' is true but 'tls_enabled' is false. \
+                 Cannot enforce TLS when TLS is disabled.".to_owned()
+            ));
+        }
+
         Ok(config)
     }
 }
@@ -120,7 +129,7 @@ impl SetupConfiguration for DocumentDBSetupConfiguration {
     }
 
     fn postgres_port(&self) -> u16 {
-        self.postgres_port.unwrap_or(9712)
+        self.postgres_port.unwrap_or(5432)
     }
 
     fn postgres_database(&self) -> &str {
@@ -215,7 +224,11 @@ impl SetupConfiguration for DocumentDBSetupConfiguration {
     }
 
     fn enforce_tls(&self) -> bool {
-        self.enforce_tls.unwrap_or(true)
+        self.enforce_tls.unwrap_or(false)
+    }
+
+    fn tls_enabled(&self) -> bool {
+        self.tls_enabled.unwrap_or(false)
     }
 
     #[expect(clippy::unwrap_used, reason = "validated octal string")]

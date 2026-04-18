@@ -55,7 +55,7 @@ impl ConnectionContext {
         let cipher_type = if let Some(tls) = tls_config {
             service_context
                 .tls_provider()
-                .ciphersuite_to_i32(tls.current_cipher())
+                .map_or(0, |p| p.ciphersuite_to_i32(tls.current_cipher()))
         } else {
             0
         };

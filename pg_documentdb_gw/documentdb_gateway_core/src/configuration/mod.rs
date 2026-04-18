@@ -103,6 +103,11 @@ pub trait SetupConfiguration: DynClone + Send + Sync + Debug {
     /// Returns whether TLS should be enforced for all connections.
     fn enforce_tls(&self) -> bool;
 
+    /// Returns whether TLS is enabled for the gateway.
+    /// When `false`, TLS is completely disabled: no certificates are required and
+    /// all incoming connections are handled as plain TCP regardless of TLS handshakes.
+    fn tls_enabled(&self) -> bool;
+
     /// Returns the file permissions for Unix socket files (octal format).
     /// Defaults to 0o660 (owner+group read/write) if not specified.
     fn unix_socket_file_permissions(&self) -> u32;

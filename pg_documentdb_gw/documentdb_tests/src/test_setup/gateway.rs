@@ -41,12 +41,18 @@ pub async fn run_test_gateway(
     ready_notify: &Arc<Notify>,
     ready_flag: &Arc<AtomicBool>,
 ) -> Result<()> {
-    let tls_provider = TlsProvider::new(
-        SetupConfiguration::certificate_options(&setup_config),
-        None,
-        None,
-    )
-    .await?;
+    let tls_provider = if SetupConfiguration::tls_enabled(&setup_config) {
+        Some(
+            TlsProvider::new(
+                SetupConfiguration::certificate_options(&setup_config),
+                None,
+                None,
+            )
+            .await?,
+        )
+    } else {
+        None
+    };
 
     let connection_pool_manager = get_pool_manager();
 

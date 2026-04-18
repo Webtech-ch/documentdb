@@ -42,7 +42,7 @@ if [ "$PG_VERSION" == "" ]; then
   exit 1
 fi
 
-coordinatorPort="9712"
+coordinatorPort="5432"
 postgresDirectory=""
 initSetup="false"
 forceCleanup="false"

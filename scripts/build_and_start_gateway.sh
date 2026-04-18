@@ -12,7 +12,7 @@ createUser="true"
 userName=""
 userPassword=""
 hostname="localhost"
-port="9712" # Default port
+port="5432" # Default port
 owner=$(whoami)
 while getopts "d:u:p:n:chsP:o:" opt; do
     case $opt in
@@ -62,7 +62,7 @@ if [ "$help" == "true" ]; then
     echo "${green}[-u] - required argument. username for the user to be created."
     echo "${green}[-p] - required argument. password for the user to be created."
     echo "${green}[-n] - optional argument. hostname for the database connection. Default is localhost."
-    echo "${green}[-P] - optional argument. port for the database connection. Default is 9712."
+    echo "${green}[-P] - optional argument. port for the database connection. Default is 5432."
     echo "${green}[-c] - optional argument. runs cargo clean before building the gateway."
     echo "${green}[-d] - optional argument. path to custom SetupConfiguration file"
     echo "${green}[-s] - optional argument. Skips user creation. If provided, -u and -p."
