@@ -42,7 +42,7 @@ All sample data is inserted into the `sampledb` database to keep it separate fro
 These files are automatically executed when the DocumentDB container starts (unless `--skip-init-data` or `SKIP_INIT_DATA=true` is supplied). They can also be run manually using mongosh:
 
 ```bash
-mongosh localhost:10260 -u username -p mypassword --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --file 01-users.js
+mongosh localhost:27017 -u username -p mypassword --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --file 01-users.js
 ```
 
 ## Data Overview

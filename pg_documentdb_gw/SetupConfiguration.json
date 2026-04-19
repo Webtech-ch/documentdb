@@ -7,7 +7,8 @@
     "internal_role"
   ],
   "PostgresPort": 5432,
-  "GatewayListenPort": 10260,
+  "PostgresDatabase": "documentdb",
+  "GatewayListenPort": 27017,
   "HostConfigurationWatchIntervalMs": 1000,
   "TlsEnabled": false,
   "CertificateOptions": {

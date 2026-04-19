@@ -63,13 +63,13 @@ echo "    Found: ${DEB_PACKAGE_REL_PATH}"
 
 echo "==> Step 3: Building Docker image '${IMAGE_TAG}'"
 docker build \
-    --build-arg BASE_IMAGE=debian:trixie-slim \
-    --build-arg POSTGRES_VERSION="${PG}" \
-    --build-arg DEB_PACKAGE_REL_PATH="${DEB_PACKAGE_REL_PATH}" \
-    -t "${IMAGE_TAG}" \
-    -f .github/containers/Build-Ubuntu/Dockerfile_gateway .
+   --build-arg BASE_IMAGE=debian:trixie-slim \
+   --build-arg POSTGRES_VERSION="${PG}" \
+   --build-arg DEB_PACKAGE_REL_PATH="${DEB_PACKAGE_REL_PATH}" \
+   -t "${IMAGE_TAG}" \
+   -f .github/containers/Build-Ubuntu/Dockerfile_gateway .
 
 echo ""
 echo "Build complete. Image tagged as '${IMAGE_TAG}'."
 echo "Run it with:"
-echo "  docker run -dt -p 10260:10260 --name documentdb-container ${IMAGE_TAG} --username <USER> --password <PASS>"
+echo "  docker run -dt -p 27017:27017 --name documentdb-container ${IMAGE_TAG} --documentdb-user <USER> --documentdb-password <PASS>"

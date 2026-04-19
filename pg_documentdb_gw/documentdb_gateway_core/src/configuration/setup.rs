@@ -133,7 +133,7 @@ impl SetupConfiguration for DocumentDBSetupConfiguration {
     }
 
     fn postgres_database(&self) -> &str {
-        self.postgres_database.as_deref().unwrap_or("postgres")
+        self.postgres_database.as_deref().unwrap_or("documentdb")
     }
 
     fn postgres_system_user(&self) -> &str {
@@ -170,7 +170,7 @@ impl SetupConfiguration for DocumentDBSetupConfiguration {
     }
 
     fn gateway_listen_port(&self) -> u16 {
-        self.gateway_listen_port.unwrap_or(10260)
+        self.gateway_listen_port.unwrap_or(27017)
     }
 
     fn blocked_role_prefixes(&self) -> &[String] {

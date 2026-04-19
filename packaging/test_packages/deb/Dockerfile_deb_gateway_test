@@ -66,16 +66,16 @@ ENV LANGUAGE=en_US.UTF-8 \
 ENV CERT_PATH="" \
     KEY_FILE="" \
     DATA_PATH="/data" \
-    DOCUMENTDB_PORT="10260" \
+    DOCUMENTDB_PORT="27017" \
     ENABLE_TELEMETRY="false" \
     LOG_LEVEL="info" \
-    USERNAME="default_user" \
+    DOCUMENTDB_USER="default_user" \
     CREATE_USER="true" \
     START_POSTGRESQL="true" \
     POSTGRESQL_PORT="5432" \
     OWNER="documentdb" \
     PG_VERSION_USED="${POSTGRES_VERSION}" \
-    ALLOW_EXTERNAL_CONNECTIONS="false" \
+    POSTGRES_ALLOW_EXTERNAL_CONNECTIONS="true" \
     PATH=/usr/lib/postgresql/${POSTGRES_VERSION}/bin:$PATH
 
 RUN sudo mkdir /home/documentdb/gateway

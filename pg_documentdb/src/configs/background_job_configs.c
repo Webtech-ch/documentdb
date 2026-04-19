@@ -73,7 +73,7 @@ bool EnableBackgroundWorkerInitJobs = DEFAULT_ENABLE_BG_WORKER_INIT_JOBS;
 #define DEFAULT_BG_WORKER_JOB_TIMEOUT_THRESHOLD_SEC 300
 int BackgroundWorkerJobTimeoutThresholdSec = DEFAULT_BG_WORKER_JOB_TIMEOUT_THRESHOLD_SEC;
 
-#define DEFAULT_BG_DATABASE_NAME "postgres"
+#define DEFAULT_BG_DATABASE_NAME "documentdb"
 char *BackgroundWorkerDatabaseName = DEFAULT_BG_DATABASE_NAME;
 
 #define DEFAULT_BG_LATCH_TIMEOUT_SEC 1

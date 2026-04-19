@@ -72,7 +72,7 @@ EXPLAIN (VERBOSE ON, COSTS OFF, TIMING OFF) SELECT object_id, document FROM docu
    Tasks Shown: All
    ->  Task
          Query: SELECT object_id, document FROM documentdb_data.documents_111_11002 collection WHERE ((document OPERATOR(documentdb_api_catalog.#<=) '{ "_id" : { "$numberInt" : "5" } }'::documentdb_core.bsonquery) AND ((object_id OPERATOR(documentdb_core.<=) '{ "" : { "$numberInt" : "5" } }'::documentdb_core.bson) AND (object_id OPERATOR(documentdb_core.>=) '{ "" : { "$numberDouble" : "-Infinity" } }'::documentdb_core.bson)) AND (shard_key_value OPERATOR(pg_catalog.=) '111'::bigint)) ORDER BY object_id
-         Node: host=localhost port=58081 dbname=postgres
+         Node: host=localhost port=58081 dbname=documentdb
          ->  Sort
                Output: object_id, document
                Sort Key: collection.object_id

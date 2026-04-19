@@ -27,7 +27,7 @@ export PGISOLATIONTIMEOUT = 60
 # Helper to run a multinode test suite: start cluster -> run tests -> stop cluster
 define run_multinode_test
 	$(OSS_SRC_DIR)scripts/start_oss_server.sh -c -x -r -n 1 -w 5808 -p 58070 -d ./tmp/multinode/data -f $(CURDIR)/regression_opts.conf -l $(CURDIR)/log/pglog_multinode.log
-	{ $(top_builddir)/src/test/regress/pg_regress --port 58070 --encoding=UTF8 --dlpath=$(BASEPATH) --use-existing --dbname=postgres $(1) $(2) 2>&1; echo $$? > log/.exitcode; } | tee log/summary_$(3).out;
+	{ $(top_builddir)/src/test/regress/pg_regress --port 58070 --encoding=UTF8 --dlpath=$(BASEPATH) --use-existing --dbname=documentdb $(1) $(2) 2>&1; echo $$? > log/.exitcode; } | tee log/summary_$(3).out;
 	exitcode=$$(cat log/.exitcode); \
 	if test $$exitcode -ne 0; then \
 		$(OSS_SRC_DIR)scripts/start_oss_server.sh -s -x -r -n 1 -w 5808 -p 58070 -d ./tmp/multinode/data; \
@@ -81,7 +81,7 @@ prepare_multinode_dirs:
 INSTALL_PG_PORT ?= 5432
 
 define install_check_common
-	mkdir -p log && { $(top_builddir)/src/test/regress/pg_regress --port $(INSTALL_PG_PORT) --encoding=UTF8 --dlpath=$(BASEPATH) --use-existing --dbname=postgres $(1) $(2) 2>&1; echo $$? > log/.exitcode; } | tee log/summary.out; test $$(cat log/.exitcode) -eq 0 || (cat regression.diffs && false)
+	mkdir -p log && { $(top_builddir)/src/test/regress/pg_regress --port $(INSTALL_PG_PORT) --encoding=UTF8 --dlpath=$(BASEPATH) --use-existing --dbname=documentdb $(1) $(2) 2>&1; echo $$? > log/.exitcode; } | tee log/summary.out; test $$(cat log/.exitcode) -eq 0 || (cat regression.diffs && false)
 endef
 
 installcheck: generate_version_schedule

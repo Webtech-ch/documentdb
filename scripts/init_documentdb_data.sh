@@ -11,7 +11,7 @@ USERNAME="default_user"
 PASSWORD=""
 INIT_DATA_PATH="/init_doc_db.d"
 VERBOSE="false"
-DOCUMENTDB_PORT="10260"
+DOCUMENTDB_PORT="27017"
 USE_TLS="false"
 LOG_FILE="${ENTRYPOINT_LOG:-/var/log/documentdb/gateway_entrypoint.log}"
 LOG_FILE_AVAILABLE="false"
@@ -34,7 +34,7 @@ Usage: $0 [OPTIONS]
 Options:
   -h, --help                    Show this help message
   -H, --host HOST              DocumentDB host (default: localhost)
-  -P, --port PORT              DocumentDB port (default: 10260)
+  -P, --port PORT              DocumentDB port (default: 27017)
   -u, --username USERNAME      DocumentDB username (default: default_user)
   -p, --password PASSWORD      DocumentDB password (required)
   -d, --data-path PATH         Path to directory containing .js initialization files

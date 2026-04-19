@@ -11,7 +11,7 @@ CONTAINER_NAME="documentdb-init-data-test"
 IMAGE_NAME="documentdb-init-data-test"
 DOCKERFILE_PATH="$PROJECT_ROOT/.github/containers/Build-Ubuntu/Dockerfile_gateway"
 DOCUMENTDB_PORT="10261"  # Use different port to avoid conflicts
-PASSWORD="TestPassword123"
+DOCUMENTDB_PASSWORD="TestPassword123"
 
 echo "=== DocumentDB --init-data Feature Test ==="
 echo "Project Root: $PROJECT_ROOT"
@@ -76,7 +76,7 @@ wait_for_documentdb() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
+        if mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
             echo "✅ DocumentDB is ready!"
             return 0
         fi
@@ -120,7 +120,7 @@ verify_sample_data() {
     
     # Check if sampledb database exists and switch to it
     echo "Checking sampledb database..."
-    DB_LIST=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.adminCommand('listDatabases')" --quiet 2>/dev/null)
+    DB_LIST=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.adminCommand('listDatabases')" --quiet 2>/dev/null)
     
     if [[ "$DB_LIST" == *"sampledb"* ]]; then
         echo "✅ sampledb database found"
@@ -133,59 +133,59 @@ verify_sample_data() {
     
     # Check users collection
     echo "Checking users collection..."
-    USER_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments()" --quiet 2>/dev/null | tail -1)
+    USER_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments()" --quiet 2>/dev/null | tail -1)
     echo "Users count: $USER_COUNT"
     
     # Check products collection
     echo "Checking products collection..."
-    PRODUCT_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.countDocuments()" --quiet 2>/dev/null | tail -1)
+    PRODUCT_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.countDocuments()" --quiet 2>/dev/null | tail -1)
     echo "Products count: $PRODUCT_COUNT"
     
     # Check orders collection
     echo "Checking orders collection..."
-    ORDER_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.countDocuments()" --quiet 2>/dev/null | tail -1)
+    ORDER_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.countDocuments()" --quiet 2>/dev/null | tail -1)
     echo "Orders count: $ORDER_COUNT"
     
     # Check analytics collection
     echo "Checking analytics collection..."
-    ANALYTICS_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.countDocuments()" --quiet 2>/dev/null | tail -1)
+    ANALYTICS_COUNT=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.countDocuments()" --quiet 2>/dev/null | tail -1)
     echo "Analytics count: $ANALYTICS_COUNT"
     
     # Show sample data from each collection
     echo
     echo "=== Sample Data Examples ==="
     echo "Sample user:"
-    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.findOne()" --quiet 2>/dev/null | head -10
+    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.findOne()" --quiet 2>/dev/null | head -10
     
     echo
     echo "Sample product:"
-    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.findOne()" --quiet 2>/dev/null | head -10
+    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.findOne()" --quiet 2>/dev/null | head -10
     
     echo
     echo "Sample order:"
-    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.findOne()" --quiet 2>/dev/null | head -10
+    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.findOne()" --quiet 2>/dev/null | head -10
     
     echo
     echo "Sample analytics:"
-    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.findOne()" --quiet 2>/dev/null | head -10
+    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.findOne()" --quiet 2>/dev/null | head -10
     
     # Verify indexes were created
     echo
     echo "=== Checking Indexes ==="
     echo "Users indexes:"
-    USER_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.getIndexes().length" --quiet 2>/dev/null | tail -1)
+    USER_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.getIndexes().length" --quiet 2>/dev/null | tail -1)
     echo "Users has $USER_INDEXES indexes"
     
     echo "Products indexes:"
-    PRODUCT_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.getIndexes().length" --quiet 2>/dev/null | tail -1)
+    PRODUCT_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.getIndexes().length" --quiet 2>/dev/null | tail -1)
     echo "Products has $PRODUCT_INDEXES indexes"
     
     echo "Orders indexes:"
-    ORDER_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.getIndexes().length" --quiet 2>/dev/null | tail -1)
+    ORDER_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.getIndexes().length" --quiet 2>/dev/null | tail -1)
     echo "Orders has $ORDER_INDEXES indexes"
     
     echo "Analytics indexes:"
-    ANALYTICS_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.getIndexes().length" --quiet 2>/dev/null | tail -1)
+    ANALYTICS_INDEXES=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.analytics.getIndexes().length" --quiet 2>/dev/null | tail -1)
     echo "Analytics has $ANALYTICS_INDEXES indexes"
     
     # Test some complex queries to verify data relationships
@@ -193,24 +193,24 @@ verify_sample_data() {
     echo "=== Testing Data Relationships and Queries ==="
     
     echo "Testing query: Users in Seattle"
-    SEATTLE_USERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments({city: 'Seattle'})" --quiet 2>/dev/null | tail -1)
+    SEATTLE_USERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments({city: 'Seattle'})" --quiet 2>/dev/null | tail -1)
     echo "Users in Seattle: $SEATTLE_USERS"
     
     echo "Testing query: Electronics products"
-    ELECTRONICS_PRODUCTS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.countDocuments({category: 'Electronics'})" --quiet 2>/dev/null | tail -1)
+    ELECTRONICS_PRODUCTS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.products.countDocuments({category: 'Electronics'})" --quiet 2>/dev/null | tail -1)
     echo "Electronics products: $ELECTRONICS_PRODUCTS"
     
     echo "Testing query: Orders with status 'delivered'"
-    DELIVERED_ORDERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.countDocuments({status: 'delivered'})" --quiet 2>/dev/null | tail -1)
+    DELIVERED_ORDERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.orders.countDocuments({status: 'delivered'})" --quiet 2>/dev/null | tail -1)
     echo "Delivered orders: $DELIVERED_ORDERS"
     
     echo "Testing query: Premium users"
-    PREMIUM_USERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments({tags: 'premium'})" --quiet 2>/dev/null | tail -1)
+    PREMIUM_USERS=$(mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments({tags: 'premium'})" --quiet 2>/dev/null | tail -1)
     echo "Premium users: $PREMIUM_USERS"
     
     # Test aggregation pipeline
     echo "Testing aggregation: Total revenue by order status"
-    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "
+    mongosh localhost:$DOCUMENTDB_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "
         use('sampledb'); 
         db.orders.aggregate([
             { \$group: { 
@@ -240,11 +240,11 @@ test_environment_variable() {
     echo "Starting container with INIT_DATA environment variable..."
     docker run -d \
         --name "${CONTAINER_NAME}-env" \
-        -p $((DOCUMENTDB_PORT + 1)):10260 \
-        -e PASSWORD=$PASSWORD \
+        -p $((DOCUMENTDB_PORT + 1)):27017 \
+        -e DOCUMENTDB_PASSWORD=$DOCUMENTDB_PASSWORD \
         -e INIT_DATA=true \
         $IMAGE_NAME \
-        --password $PASSWORD
+        --documentdb-password $DOCUMENTDB_PASSWORD
     
     ENV_CONTAINER_NAME="${CONTAINER_NAME}-env"
     ENV_PORT=$((DOCUMENTDB_PORT + 1))
@@ -254,7 +254,7 @@ test_environment_variable() {
     local attempt=1
     
     while [ $attempt -le $max_attempts ]; do
-        if mongosh localhost:$ENV_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
+        if mongosh localhost:$ENV_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; then
             echo "✅ Environment variable test container is ready!"
             break
         fi
@@ -293,7 +293,7 @@ test_environment_variable() {
     fi
     
     # Quick verification
-    ENV_USER_COUNT=$(mongosh localhost:$ENV_PORT -u default_user -p $PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments()" --quiet 2>/dev/null | tail -1)
+    ENV_USER_COUNT=$(mongosh localhost:$ENV_PORT -u default_user -p $DOCUMENTDB_PASSWORD --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates --eval "use('sampledb'); db.users.countDocuments()" --quiet 2>/dev/null | tail -1)
     
     # Cleanup environment test container
     docker stop $ENV_CONTAINER_NAME 2>/dev/null || true
@@ -324,10 +324,10 @@ main() {
     echo "Starting DocumentDB container with --init-data true..."
     docker run -d \
         --name $CONTAINER_NAME \
-        -p $DOCUMENTDB_PORT:10260 \
-        -e PASSWORD=$PASSWORD \
+        -p $DOCUMENTDB_PORT:27017 \
+        -e DOCUMENTDB_PASSWORD=$DOCUMENTDB_PASSWORD \
         $IMAGE_NAME \
-        --password $PASSWORD \
+        --documentdb-password $DOCUMENTDB_PASSWORD \
         --init-data true
     
     echo "Container started with ID: $(docker ps -q -f name=$CONTAINER_NAME)"
@@ -465,8 +465,8 @@ main() {
     echo "✅ Containers stopped and removed successfully"
     echo
     echo "To manually explore the sample data:"
-    echo "1. Start container: docker run -d --name documentdb-manual -p 10260:10260 -e PASSWORD=mypass $IMAGE_NAME --password mypass --init-data true"
-    echo "2. Connect: mongosh localhost:10260 -u default_user -p mypass --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates"
+    echo "1. Start container: docker run -d --name documentdb-manual -p 27017:27017 -e DOCUMENTDB_PASSWORD=mypass $IMAGE_NAME --documentdb-password mypass --init-data true"
+    echo "2. Connect: mongosh localhost:27017 -u default_user -p mypass --authenticationMechanism SCRAM-SHA-256 --tls --tlsAllowInvalidCertificates"
     echo "3. Use database: use('sampledb')"
     echo "4. Explore: db.users.find(), db.products.find(), db.orders.find(), db.analytics.find()"
     echo

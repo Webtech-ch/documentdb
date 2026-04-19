@@ -14,8 +14,8 @@ CONTAINER_NAME="documentdb-invalid-init-test"
 IMAGE_NAME="documentdb-gateway-test"
 INVALID_DATA_DIR="$SCRIPT_DIR/sample-invalid-data"
 DOCKERFILE_PATH="$PROJECT_ROOT/.github/containers/Build-Ubuntu/Dockerfile_gateway"
-DOCUMENTDB_PORT="10260"
-PASSWORD="TestPassword123"
+DOCUMENTDB_PORT="27017"
+DOCUMENTDB_PASSWORD="TestPassword123"
 TEST_TIMEOUT=300  # 5 minutes timeout for container to stop
 
 # Colors for output
@@ -252,10 +252,10 @@ run_invalid_data_test() {
     echo "docker run -d \\"
     echo "    --name $CONTAINER_NAME \\"
     echo "    -p $DOCUMENTDB_PORT:$DOCUMENTDB_PORT \\"
-    echo "    -e PASSWORD=$PASSWORD \\"
+    echo "    -e DOCUMENTDB_PASSWORD=$DOCUMENTDB_PASSWORD \\"
     echo "    -v \"$temp_dir:/init_doc_db.d\" \\"
     echo "    $IMAGE_NAME \\"
-    echo "    --password $PASSWORD \\"
+    echo "    --documentdb-password $DOCUMENTDB_PASSWORD \\"
     echo "    --init-data-path /init_doc_db.d"
     echo "=== End of Docker Run Command ==="
     echo
@@ -263,10 +263,10 @@ run_invalid_data_test() {
     if docker run -d \
         --name $CONTAINER_NAME \
         -p $DOCUMENTDB_PORT:$DOCUMENTDB_PORT \
-        -e PASSWORD=$PASSWORD \
+        -e DOCUMENTDB_PASSWORD=$DOCUMENTDB_PASSWORD \
         -v "$temp_dir:/init_doc_db.d" \
         $IMAGE_NAME \
-        --password $PASSWORD \
+        --documentdb-password $DOCUMENTDB_PASSWORD \
         --init-data-path /init_doc_db.d; then
         
         print_status "SUCCESS" "Container started successfully"

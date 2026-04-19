@@ -318,7 +318,7 @@ fi
 
 if [ "$gatewayWorker" == "true" ]; then
   setupConfigurationFile="$scriptDir/../pg_documentdb_gw/SetupConfiguration.json"
-  AddPostgresConfigToServers "$postgresDirectory" "documentdb_gateway.database = 'postgres'"
+  AddPostgresConfigToServers "$postgresDirectory" "documentdb_gateway.database = '$DOCUMENTDB_DATABASE'"
   AddPostgresConfigToServers "$postgresDirectory" "documentdb_gateway.setup_configuration_file = '$setupConfigurationFile'"
 fi
 
@@ -345,18 +345,24 @@ fi
 StartServer $postgresDirectory $coordinatorPort $logPath
 
 if [ "$initSetup" == "true" ]; then
+  # Create the documentdb database if it does not already exist
+  if ! psql -p $coordinatorPort -U "$userName" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$DOCUMENTDB_DATABASE'" | grep -q 1; then
+    echo "Creating database '$DOCUMENTDB_DATABASE'..."
+    psql -p $coordinatorPort -U "$userName" -d postgres -c "CREATE DATABASE \"$DOCUMENTDB_DATABASE\";"
+  fi
+
   SetupPostgresServerExtensions "$userName" $coordinatorPort $extensionName
 
   if [ "$useDocumentdbExtendedRum" == "true" ] && [ "$initSetup" == "true" ]; then
-    psql -p $coordinatorPort -d postgres -c "CREATE EXTENSION documentdb_extended_rum"
+    psql -p $coordinatorPort -d "$DOCUMENTDB_DATABASE" -c "CREATE EXTENSION documentdb_extended_rum"
   fi
 
   if [ "$distributed" == "true" ]; then
-    psql -p $coordinatorPort -d postgres -c "SELECT citus_set_coordinator_host('localhost', $coordinatorPort);"
+    psql -p $coordinatorPort -d "$DOCUMENTDB_DATABASE" -c "SELECT citus_set_coordinator_host('localhost', $coordinatorPort);"
 
     # Start worker nodes and register them with the coordinator
     if [ "$numberWorkerNodes" -gt 0 ]; then
-      psql -d postgres -p $coordinatorPort -c "SELECT citus_set_node_property('localhost', $coordinatorPort, 'shouldhaveshards', true);"
+      psql -d "$DOCUMENTDB_DATABASE" -p $coordinatorPort -c "SELECT citus_set_node_property('localhost', $coordinatorPort, 'shouldhaveshards', true);"
       for (( i=1; i<=$numberWorkerNodes; i++ )); do
         _nodePort="${workerNodePortPrefix}${i}"
         
@@ -371,7 +377,7 @@ if [ "$initSetup" == "true" ]; then
       AddNodeToCluster $coordinatorPort $coordinatorPort
     fi
 
-    psql -p $coordinatorPort -d postgres -c "SELECT documentdb_api_distributed.initialize_cluster()"
+    psql -p $coordinatorPort -d "$DOCUMENTDB_DATABASE" -c "SELECT documentdb_api_distributed.initialize_cluster()"
   fi
   if [ "$customAdminUser" != "" ]; then
     SetupCustomAdminUser "$customAdminUser" "$customAdminUserPassword" $coordinatorPort "$userName"
@@ -407,7 +413,7 @@ if [ "$valgrindMode" == "true" ]; then
   echo -n "Waiting for server up with valgrind via psql"
   wait="true"
   while [ "$wait" == "true" ]; do
-    result=$(psql -X -t -d postgres -p $coordinatorPort -c "SELECT 1" || true)
+    result=$(psql -X -t -d "$DOCUMENTDB_DATABASE" -p $coordinatorPort -c "SELECT 1" || true)
     if [[ "$result" =~ "1" ]]; then
       echo "Server is up via psql."
       wait="false";

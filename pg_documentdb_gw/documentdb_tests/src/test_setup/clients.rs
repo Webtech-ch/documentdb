@@ -37,7 +37,7 @@ pub fn get_client_unauthenticated() -> std::result::Result<Client, Error> {
                 .allow_invalid_certificates(true)
                 .build(),
         ))
-        .hosts(vec![ServerAddress::parse("127.0.0.1:10260")?])
+        .hosts(vec![ServerAddress::parse("127.0.0.1:27017")?])
         .build();
 
     Client::with_options(client_options)
@@ -73,7 +73,7 @@ pub fn get_client_with_credentials(
                 .allow_invalid_certificates(true)
                 .build(),
         ))
-        .hosts(vec![ServerAddress::parse("127.0.0.1:10260")?])
+        .hosts(vec![ServerAddress::parse("127.0.0.1:27017")?])
         .build();
 
     Client::with_options(client_options)
@@ -90,7 +90,7 @@ pub fn get_client_insecure() -> std::result::Result<Client, Error> {
 
     let client_options = ClientOptions::builder()
         .credential(credential)
-        .hosts(vec![ServerAddress::parse("127.0.0.1:10260")?])
+        .hosts(vec![ServerAddress::parse("127.0.0.1:27017")?])
         .build();
     Client::with_options(client_options)
 }

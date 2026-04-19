@@ -10,7 +10,7 @@ args = parser.parse_args()
 
 # Create a MongoDB client and open a connection to DocumentDB
 client = pymongo.MongoClient(
-    f"mongodb://{args.username}:{args.password}@localhost:10260/?tls=true&tlsAllowInvalidCertificates=true"
+    f"mongodb://{args.username}:{args.password}@localhost:27017/?tls=true&tlsAllowInvalidCertificates=true"
 )
 
 

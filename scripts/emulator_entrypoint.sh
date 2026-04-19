@@ -27,16 +27,24 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 # Function to start log streaming
+# Optional 4th argument: grep -v pattern to filter out unwanted lines
 start_log_streaming() {
     local log_file="$1"
     local log_prefix="$2"
     local pid_var="$3"
+    local filter_pattern="${4:-}"
     
     if [ -f "$log_file" ]; then
         echo "Starting log streaming from $log_file with prefix [$log_prefix]..."
-        tail -F "$log_file" 2>/dev/null | while IFS= read -r line; do
-            echo "[$log_prefix] $line"
-        done &
+        if [ -n "$filter_pattern" ]; then
+            tail -F "$log_file" 2>/dev/null | grep -v "$filter_pattern" | while IFS= read -r line; do
+                echo "[$log_prefix] $line"
+            done &
+        else
+            tail -F "$log_file" 2>/dev/null | while IFS= read -r line; do
+                echo "[$log_prefix] $line"
+            done &
+        fi
         local tail_pid=$!
         eval "$pid_var=$tail_pid"
         echo "Log streaming started with PID: $tail_pid"
@@ -69,20 +77,20 @@ Optional arguments:
                         Defaults to /data
                         Overrides DATA_PATH environment variable.
   --documentdb-port     The port of the DocumentDB endpoint on the container. 
-                        You still need to publish this port (e.g. -p 10260:10260).
-                        Defaults to 10260
-                        Overrides PORT environment variable.
+                        You still need to publish this port (e.g. -p 27017:27017).
+                        Defaults to 27017
+                        Overrides DOCUMENTDB_PORT environment variable.
   --enable-telemetry    Enable telemetry data sent to the usage colletor (Azure Application Insights). 
                         Overrides ENABLE_TELEMETRY environment variable.
   --log-level           The verbosity of logs that will be emitted.
                         Overrides LOG_LEVEL environment variable.
                           quiet, error, warn, info (default), debug, trace
-  --username            Specify the username for the DocumentDB.
-                        Defaults to default_user
-                        Overrides USERNAME environment variable.
-  --password            Specify the password for the DocumentDB.
+  --documentdb-user     Specify the username for the DocumentDB.
                         REQUIRED.
-                        Overrides PASSWORD environment variable.
+                        Overrides DOCUMENTDB_USER environment variable.
+  --documentdb-password Specify the password for the DocumentDB.
+                        REQUIRED.
+                        Overrides DOCUMENTDB_PASSWORD environment variable.
   --create-user         Specify whether to create a user. 
                         Defaults to true.
   --start-pg            Specify whether to start the PostgreSQL server.
@@ -93,10 +101,16 @@ Optional arguments:
   --owner               Specify the owner of the DocumentDB.
                         Overrides OWNER environment variable.
                         defaults to documentdb.
-  --allow-external-connections
+  --postgres-allow-external-connections
                         Allow external connections to PostgreSQL.
-                        Defaults to false.
-                        Overrides ALLOW_EXTERNAL_CONNECTIONS environment variable.
+                        Defaults to true.
+                        Overrides POSTGRES_ALLOW_EXTERNAL_CONNECTIONS environment variable.
+  --postgres-user       Create a PostgreSQL superuser with this username.
+                        Only takes effect when both --postgres-user and --postgres-password are set.
+                        Overrides POSTGRES_USER environment variable.
+  --postgres-password   Password for the PostgreSQL superuser created via --postgres-user.
+                        Only takes effect when both --postgres-user and --postgres-password are set.
+                        Overrides POSTGRES_PASSWORD environment variable.
   --init-data-path [PATH]
                         Specify a directory containing JavaScript files for database initialization.
                         Files will be executed in alphabetical order using mongosh.
@@ -104,7 +118,7 @@ Optional arguments:
                         Defaults to /init_doc_db.d
                         Overrides INIT_DATA_PATH environment variable.
   --skip-init-data      Skip initialization with built-in sample data.
-                        By default, sample collections (users, products, orders, analytics) in 'sampledb' database will be created.
+                        Defaults to true. Sample data is not loaded unless SKIP_INIT_DATA=false or this flag is not set.
                         Overrides SKIP_INIT_DATA environment variable.
   --disable-extended-rum
                         Disable the use of extended_rum for indexes.
@@ -166,14 +180,14 @@ do
         export LOG_LEVEL=$1
         shift;;
 
-    --username)
+    --documentdb-user)
         shift
-        export USERNAME=$1
+        export DOCUMENTDB_USER=$1
         shift;;
 
-    --password)
+    --documentdb-password)
         shift
-        export PASSWORD=$1
+        export DOCUMENTDB_PASSWORD=$1
         shift;;
 
     --create-user)
@@ -196,9 +210,19 @@ do
         export OWNER=$1
         shift;;
 
-    --allow-external-connections)
+    --postgres-allow-external-connections)
         shift
-        export ALLOW_EXTERNAL_CONNECTIONS=$1
+        export POSTGRES_ALLOW_EXTERNAL_CONNECTIONS=$1
+        shift;;
+
+    --postgres-user)
+        shift
+        export POSTGRES_USER=$1
+        shift;;
+
+    --postgres-password)
+        shift
+        export POSTGRES_PASSWORD=$1
         shift;;
 
     --init-data-path)
@@ -228,15 +252,16 @@ done
 # Set default values if not provided
 export OWNER=${OWNER:-$(whoami)}
 export DATA_PATH=${DATA_PATH:-/data}
-export DOCUMENTDB_PORT=${DOCUMENTDB_PORT:-10260}
+export DOCUMENTDB_PORT=${DOCUMENTDB_PORT:-27017}
 export POSTGRESQL_PORT=${POSTGRESQL_PORT:-5432}
-export USERNAME=${USERNAME:-default_user}
-export PASSWORD=${PASSWORD:-Admin100}
+export DOCUMENTDB_USER=${DOCUMENTDB_USER:-}
+export DOCUMENTDB_PASSWORD=${DOCUMENTDB_PASSWORD:-}
 export CREATE_USER=${CREATE_USER:-true}
 export START_POSTGRESQL=${START_POSTGRESQL:-true}
 export INIT_DATA_PATH=${INIT_DATA_PATH:-/init_doc_db.d}
-export SKIP_INIT_DATA=${SKIP_INIT_DATA:-false}
+export SKIP_INIT_DATA=${SKIP_INIT_DATA:-true}
 export DISABLE_EXTENDED_RUM=${DISABLE_EXTENDED_RUM:-false}
+export POSTGRES_ALLOW_EXTERNAL_CONNECTIONS=${POSTGRES_ALLOW_EXTERNAL_CONNECTIONS:-true}
 export TLS_ENABLED=${TLS_ENABLED:-false}
 
 # Setup centralized log directory structure
@@ -259,12 +284,17 @@ echo "  /var/log/documentdb/oss_server.log"
 echo "  /var/log/documentdb/postgres/pglog.log (will be symlinked)"
 
 # Validate required parameters
-if [ -z "${PASSWORD:-}" ]; then
-    echo "Error: PASSWORD is required. Please provide a password using --password argument or PASSWORD environment variable."
+if [ -z "${DOCUMENTDB_USER:-}" ]; then
+    echo "Error: DOCUMENTDB_USER is required. Please provide a username using --documentdb-user argument or DOCUMENTDB_USER environment variable."
     exit 1
 fi
 
-echo "Using username: $USERNAME"
+if [ -z "${DOCUMENTDB_PASSWORD:-}" ]; then
+    echo "Error: DOCUMENTDB_PASSWORD is required. Please provide a password using --documentdb-password argument or DOCUMENTDB_PASSWORD environment variable."
+    exit 1
+fi
+
+echo "Using username: $DOCUMENTDB_USER"
 echo "Using owner: $OWNER"
 echo "Using data path: $DATA_PATH"
 
@@ -303,6 +333,16 @@ if [ -n "$LOG_LEVEL" ] && \
     exit 1
 fi
 
+# Translate LOG_LEVEL to RUST_LOG, which is used by the Rust gateway binary.
+# "quiet" maps to "off" since Rust's tracing crate does not have a quiet level.
+if [ -n "${LOG_LEVEL:-}" ]; then
+    if [ "$LOG_LEVEL" = "quiet" ]; then
+        export RUST_LOG="off"
+    else
+        export RUST_LOG="$LOG_LEVEL"
+    fi
+fi
+
 if [ -n "$SKIP_INIT_DATA" ] && \
    [ "$SKIP_INIT_DATA" != "true" ] && \
    [ "$SKIP_INIT_DATA" != "false" ]; then
@@ -329,7 +369,7 @@ if [ "$START_POSTGRESQL" = "true" ]; then
     echo "Setting permissions on $DATA_PATH"
     sudo chmod -R 750 "$DATA_PATH"
     
-    if ALLOW_EXTERNAL_CONNECTIONS="true"; then
+    if [ "$POSTGRES_ALLOW_EXTERNAL_CONNECTIONS" = "true" ]; then
         echo "Allowing external connections to PostgreSQL..."
         export PGOPTIONS="-e"
     fi
@@ -349,13 +389,70 @@ if [ "$START_POSTGRESQL" = "true" ]; then
     if [ "$CREATE_USER" = "false" ]; then
         start_oss_server_args+=(-u "")
     else
-        start_oss_server_args+=(-u "$USERNAME" -a "$PASSWORD")
+        start_oss_server_args+=(-u "$DOCUMENTDB_USER" -a "$DOCUMENTDB_PASSWORD")
     fi
     start_oss_server_args+=(-d "$DATA_PATH" -p "$POSTGRESQL_PORT")
 
     /home/documentdb/gateway/scripts/start_oss_server.sh "${start_oss_server_args[@]}" | tee -a "$OSS_SERVER_LOG"
 
     echo "OSS server started."
+
+    # Map LOG_LEVEL to PostgreSQL's log_min_messages.
+    # Important: in PostgreSQL's log_min_messages hierarchy, LOG ranks *above* ERROR
+    # (order: WARNING < ERROR < LOG < FATAL < PANIC), so setting 'warning' still emits
+    # LOG-level cron/vacuum messages. To suppress those we also disable pg_cron's own
+    # logging and filter LOG: lines from the streamed output (see start_log_streaming).
+    if [ -n "${LOG_LEVEL:-}" ]; then
+        case "$LOG_LEVEL" in
+            quiet)   pg_log_level="panic" ;;
+            error)   pg_log_level="log" ;;
+            warn)    pg_log_level="warning" ;;
+            info)    pg_log_level="notice" ;;
+            debug)   pg_log_level="debug2" ;;
+            trace)   pg_log_level="debug5" ;;
+            *)       pg_log_level="notice" ;;
+        esac
+        echo "Setting PostgreSQL log_min_messages to '$pg_log_level' (from LOG_LEVEL=$LOG_LEVEL)..."
+        psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+            "ALTER SYSTEM SET log_min_messages = '$pg_log_level';" && \
+        psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+            "SELECT pg_reload_conf();"
+    fi
+
+    # For warn level or quieter, suppress pg_cron's per-job log messages at source.
+    # cron.log_run emits "cron job N starting/completed" LOG entries every few seconds.
+    if [ -n "${LOG_LEVEL:-}" ]; then
+        case "$LOG_LEVEL" in
+            quiet|error|warn)
+                echo "Disabling pg_cron run/statement logging (LOG_LEVEL=$LOG_LEVEL)..."
+                psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+                    "ALTER SYSTEM SET cron.log_run = 'off';" 2>/dev/null || true
+                psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+                    "ALTER SYSTEM SET cron.log_statement = 'off';" 2>/dev/null || true
+                psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+                    "SELECT pg_reload_conf();"
+                ;;
+        esac
+    fi
+
+    # Build a log filter pattern for the streaming pipes below.
+    # At warn/error/quiet, drop any remaining PostgreSQL LOG: lines (vacuum, bg workers, etc.)
+    pg_log_filter=""
+    if [ -n "${LOG_LEVEL:-}" ]; then
+        case "$LOG_LEVEL" in
+            quiet|error|warn) pg_log_filter=" LOG: " ;;
+        esac
+    fi
+
+    # Create PostgreSQL superuser if both POSTGRES_USER and POSTGRES_PASSWORD are set
+    if [ -n "${POSTGRES_USER:-}" ] && [ -n "${POSTGRES_PASSWORD:-}" ]; then
+        echo "Creating PostgreSQL superuser: $POSTGRES_USER"
+        psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+            "CREATE ROLE \"$POSTGRES_USER\" WITH SUPERUSER LOGIN PASSWORD '$POSTGRES_PASSWORD';" 2>/dev/null || \
+        psql -p "$POSTGRESQL_PORT" -U "$OWNER" -d postgres -c \
+            "ALTER ROLE \"$POSTGRES_USER\" WITH SUPERUSER LOGIN PASSWORD '$POSTGRES_PASSWORD';"
+        echo "PostgreSQL superuser '$POSTGRES_USER' configured."
+    fi
     echo "[ENTRYPOINT] Setting up PostgreSQL log streaming..."
 
     # Start streaming PostgreSQL logs to docker logs
@@ -383,12 +480,12 @@ if [ "$START_POSTGRESQL" = "true" ]; then
         echo "Warning: PostgreSQL log file not found at $ACTUAL_PG_LOG"
     fi
     
-    # Start streaming main PostgreSQL log
-    start_log_streaming "$PG_LOG_FILE" "POSTGRES" "PG_LOG_TAIL_PID"
+    # Start streaming main PostgreSQL log (filtered when LOG_LEVEL <= warn)
+    start_log_streaming "$PG_LOG_FILE" "POSTGRES" "PG_LOG_TAIL_PID" "$pg_log_filter"
     
     # Also stream system PostgreSQL logs if they exist
     SYSTEM_PG_LOG="/var/log/postgresql/postgresql-17-main.log"
-    start_log_streaming "$SYSTEM_PG_LOG" "POSTGRES-SYSTEM" "SYSTEM_PG_LOG_TAIL_PID"
+    start_log_streaming "$SYSTEM_PG_LOG" "POSTGRES-SYSTEM" "SYSTEM_PG_LOG_TAIL_PID" "$pg_log_filter"
     
     # Stream OSS server logs
     start_log_streaming "$OSS_SERVER_LOG" "OSS-SERVER" "OSS_LOG_TAIL_PID"
@@ -432,6 +529,12 @@ if [ -n "${POSTGRESQL_PORT:-}" ]; then
     mv $configFile.tmp $configFile
 fi
 
+if [ -n "${DOCUMENTDB_DATABASE:-}" ]; then
+    echo "Updating PostgresDatabase in the configuration file..."
+    jq --arg db "$DOCUMENTDB_DATABASE" '.PostgresDatabase = $db' $configFile > $configFile.tmp && \
+    mv $configFile.tmp $configFile
+fi
+
 if [ -n "${CERT_PATH:-}" ] && [ -n "${KEY_FILE:-}" ]; then
     echo "Adding CertificateOptions to the configuration file..."
     jq --arg certPath "$CERT_PATH" --arg keyFilePath "$KEY_FILE" \
@@ -450,7 +553,7 @@ if [ "$CREATE_USER" = "false" ]; then
     echo "Skipping user creation and starting the gateway..."
     /home/documentdb/gateway/scripts/build_and_start_gateway.sh -s -d $configFile -P $POSTGRESQL_PORT -o $OWNER | tee -a "$GATEWAY_LOG" &
 else
-    /home/documentdb/gateway/scripts/build_and_start_gateway.sh -u $USERNAME -p $PASSWORD -d $configFile -P $POSTGRESQL_PORT -o $OWNER | tee -a "$GATEWAY_LOG" &
+    /home/documentdb/gateway/scripts/build_and_start_gateway.sh -u $DOCUMENTDB_USER -p $DOCUMENTDB_PASSWORD -d $configFile -P $POSTGRESQL_PORT -o $OWNER | tee -a "$GATEWAY_LOG" &
 fi
 
 gateway_pid=$! # Capture the PID of the gateway process
@@ -487,7 +590,7 @@ if [ -d "$INIT_DATA_PATH" ] && [ "$(ls -A "$INIT_DATA_PATH"/*.js 2>/dev/null)" ]
         if [ "$TLS_ENABLED" = "true" ]; then
             tls_args=(--tls)
         fi
-        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$INIT_DATA_PATH" -v "${tls_args[@]}"; then
+        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$DOCUMENTDB_USER" -p "$DOCUMENTDB_PASSWORD" -d "$INIT_DATA_PATH" -v "${tls_args[@]}"; then
             echo "Custom data initialization completed."
             custom_data_initialized=true
         else
@@ -513,7 +616,7 @@ if [ "$SKIP_INIT_DATA" != "true" ]; then
         if [ "$TLS_ENABLED" = "true" ]; then
             tls_args=(--tls)
         fi
-        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$USERNAME" -p "$PASSWORD" -d "$sample_data_path" -v "${tls_args[@]}"; then
+        if "$init_script" -H localhost -P "$DOCUMENTDB_PORT" -u "$DOCUMENTDB_USER" -p "$DOCUMENTDB_PASSWORD" -d "$sample_data_path" -v "${tls_args[@]}"; then
             echo "Sample data initialization completed."
         else
             echo "Error: Sample data initialization failed"

@@ -69,7 +69,7 @@ if [ "$help" == "true" ]; then
     echo "${green}       are no longer required."
     echo "${green}[-o] - optional argument. specifies the owner for the database operations. Default is postgres."
     echo "${green}if SetupConfigurationFile not specified assumed to be"
-    echo "${green}pg_documentdb_gw/SetupConfiguration.json and the default port is 10260"
+    echo "${green}pg_documentdb_gw/SetupConfiguration.json and the default port is 27017"
     exit 1
 fi
 

@@ -20,5 +20,5 @@ docker exec -it <container-id> bash
 Step 2: Connect to psql shell
 
 ```sh
-psql -p 5432 -d postgres
+psql -p 5432 -d documentdb
 ```
