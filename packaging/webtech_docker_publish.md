@@ -26,5 +26,5 @@ docker push ghcr.io/webtech-ch/documentdb:latest
 
 ```
 # reference FROM: or IMAGE:
-ghcr.io/webtech-ch/ftp-server
+ghcr.io/webtech-ch/documentdb:latest
 ```
